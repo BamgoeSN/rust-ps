@@ -1,8 +1,9 @@
 MAKEFLAGS += --silent
 
+PROJECT = rust-ps
 SOURCE = ./src/main.rs
-TARGET = ./target/debug/rust
-RELEASE = ./target/release/rust
+TARGET = ./target/debug/$(PROJECT)
+RELEASE = ./target/release/$(PROJECT)
 INPUT = ./input.txt
 OUTPUT = ./output.txt
 ANALYZE = ./analyze.txt
