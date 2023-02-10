@@ -69,7 +69,7 @@ mod fastio {
     }
 
     impl_trait_for_fromstr!(bool char String);
-    impl_trait_for_fromstr!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 );
+    impl_trait_for_fromstr!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize);
     impl_trait_for_fromstr!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
     impl_trait_for_fromstr!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
 
