@@ -1,5 +1,2 @@
 /target
 /oprofile_data
-
-/.vscode
-!/.vscode/launch.json
