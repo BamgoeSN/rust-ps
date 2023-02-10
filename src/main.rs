@@ -125,10 +125,6 @@ mod fastio {
         }
         pub fn next_iter<T: IterParse>(&mut self) -> impl Iterator<Item = T> + '_ {
             std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
-            // AtCoder compatible implementation
-            // std::iter::repeat_with(move || self.next_ok())
-            //     .take_while(|x| x.is_some())
-            //     .flatten()
         }
     }
 }
