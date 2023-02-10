@@ -51,71 +51,51 @@ mod fastio {
         fn parse_from(s: &str) -> Result<Self, InputError>;
     }
 
-    macro_rules! impl_atom_for_fromstr {
-        ($($t:ty) *) => {
-            $( impl Atom for $t { fn parse_from(s: &str) -> Result<Self, InputError> { s.parse().map_err(|_| ParseError(s)) } } )*
-        };
-    }
-
-    impl_atom_for_fromstr!(bool char String);
-    impl_atom_for_fromstr!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize);
-    impl_atom_for_fromstr!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
-    impl_atom_for_fromstr!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
-
     pub trait IterParse: Sized {
         fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
         where
             It: Iterator<Item = &'t str>;
     }
 
-    macro_rules! impl_iterparse_for_atom {
+    macro_rules! impl_trait_for_fromstr {
         ($($t:ty) *) => { $(
+            impl Atom for $t { fn parse_from(s: &str) -> Result<Self, InputError> { s.parse().map_err(|_| ParseError(s)) } }
             impl IterParse for $t {
-                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
-                where
-                    It: Iterator<Item = &'t str>,
-                {
-                    if let Some(s) = it.next() {
-                        <Self as Atom>::parse_from(s)
-                    } else {
-                        Err(InputExhaust)
-                    }
+                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>> where It: Iterator<Item = &'t str> {
+                    it.next().map_or( Err(InputExhaust), <Self as Atom>::parse_from )
                 }
-            } )*
-        };
+            }
+        )* };
     }
 
-    impl_iterparse_for_atom!(bool char String);
-    impl_iterparse_for_atom!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 );
-    impl_iterparse_for_atom!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
-    impl_iterparse_for_atom!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
+    impl_trait_for_fromstr!(bool char String);
+    impl_trait_for_fromstr!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 );
+    impl_trait_for_fromstr!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
+    impl_trait_for_fromstr!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
 
-    macro_rules! impl_iterparse {
+    macro_rules! impl_iterparse_for_tuple {
         ($($t:ident) *) => {
             impl<$($t),*> IterParse for ($($t),*) where $($t: IterParse),* {
-                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
-                where
-                    It: Iterator<Item = &'t str>,
-                {
+                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>> where It: Iterator<Item = &'t str> {
                     Ok(( $($t::parse_from(it)?),* ))
                 }
             }
         };
     }
 
-    impl_iterparse!();
-    impl_iterparse!(A B);
-    impl_iterparse!(A B C);
-    impl_iterparse!(A B C D);
-    impl_iterparse!(A B C D E);
-    impl_iterparse!(A B C D E F);
-    impl_iterparse!(A B C D E F G);
-    impl_iterparse!(A B C D E F G H);
-    impl_iterparse!(A B C D E F G H I);
-    impl_iterparse!(A B C D E F G H I J);
-    impl_iterparse!(A B C D E F G H I J K);
-    impl_iterparse!(A B C D E F G H I J K L);
-    impl_iterparse!(A B C D E F G H I J K L M);
+    impl_iterparse_for_tuple!();
+    impl_iterparse_for_tuple!(A B);
+    impl_iterparse_for_tuple!(A B C);
+    impl_iterparse_for_tuple!(A B C D);
+    impl_iterparse_for_tuple!(A B C D E);
+    impl_iterparse_for_tuple!(A B C D E F);
+    impl_iterparse_for_tuple!(A B C D E F G);
+    impl_iterparse_for_tuple!(A B C D E F G H);
+    impl_iterparse_for_tuple!(A B C D E F G H I);
+    impl_iterparse_for_tuple!(A B C D E F G H I J);
+    impl_iterparse_for_tuple!(A B C D E F G H I J K);
+    impl_iterparse_for_tuple!(A B C D E F G H I J K L);
+    impl_iterparse_for_tuple!(A B C D E F G H I J K L M);
 
     pub struct Tokenizer<It> {
         it: It,
