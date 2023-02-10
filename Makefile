@@ -1,5 +1,3 @@
-MAKEFLAGS += --silent
-
 PROJECT = rust-ps
 SOURCE = ./src/main.rs
 TARGET = ./target/debug/$(PROJECT)
