@@ -5,16 +5,12 @@ fn main() -> i32 {
     // FastIO
     use fastio::*;
     let input_str = get_input();
-    let mut sc = Splitter::new(input_str, |s| s.split_ascii_whitespace());
-    use std::io::*;
+    let mut sc = Tokenizer::new(input_str, |s| s.split_ascii_whitespace());
+    use std::io::{stdout, BufWriter, Write};
     let stdout = stdout();
     let wr = &mut BufWriter::new(stdout.lock());
 
     // FastIO Macros
-    macro_rules! next {
-        () => { sc.next() };
-        ($($t:ty) +) => { ($(sc.next::<$t>()),+) };
-    }
     macro_rules! out { ($($arg:tt)*) => { write!(wr, $($arg)*).ok(); }; }
     macro_rules! outln { ($($arg:tt)*) => { writeln!(wr, $($arg)*).ok(); }; }
 
@@ -24,44 +20,135 @@ fn main() -> i32 {
     0
 }
 
+#[allow(unused)]
 mod fastio {
-    use core::{slice::*, str::*};
+    use std::{fmt, io, num::*, slice::*, str::*};
 
     #[link(name = "c")]
-    extern "C" {
-        fn mmap(addr: usize, len: usize, p: i32, f: i32, fd: i32, o: i64) -> *mut u8;
-        fn fstat(fd: i32, stat: *mut usize) -> i32;
-    }
+    extern "C" {}
 
     pub fn get_input() -> &'static str {
-        let mut stat = [0; 20];
-        unsafe { fstat(0, stat.as_mut_ptr()) };
-        let buffer = unsafe { mmap(0, stat[6], 1, 2, 0, 0) };
-        unsafe { from_utf8_unchecked(from_raw_parts(buffer, stat[6])) }
+        let buf = io::read_to_string(io::stdin()).unwrap();
+        Box::leak(buf.into_boxed_str())
     }
 
-    pub struct Splitter<I: Iterator> {
-        it: I,
+    pub enum InputError<'t> {
+        InputExhaust,
+        ParseError(&'t str),
+    }
+    use InputError::*;
+
+    impl<'t> fmt::Debug for InputError<'t> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                InputExhaust => f.debug_struct("InputExhaust").finish(),
+                ParseError(s) => f.debug_struct("ParseError").field("str", s).finish(),
+            }
+        }
     }
 
-    impl<'a, 'b: 'a, T: Iterator> Splitter<T> {
-        pub fn new(s: &'b str, split: impl FnOnce(&'a str) -> T) -> Self {
+    pub trait Atom: Sized {
+        fn parse_from(s: &str) -> Result<Self, InputError>;
+    }
+
+    macro_rules! impl_atom_for_fromstr {
+        ($($t:ty) *) => {
+            $( impl Atom for $t { fn parse_from(s: &str) -> Result<Self, InputError> { s.parse().map_err(|_| ParseError(s)) } } )*
+        };
+    }
+
+    impl_atom_for_fromstr!(bool char String);
+    impl_atom_for_fromstr!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize);
+    impl_atom_for_fromstr!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
+    impl_atom_for_fromstr!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
+
+    pub trait IterParse: Sized {
+        fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
+        where
+            It: Iterator<Item = &'t str>;
+    }
+
+    macro_rules! impl_iterparse_for_atom {
+        ($($t:ty) *) => { $(
+            impl IterParse for $t {
+                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
+                where
+                    It: Iterator<Item = &'t str>,
+                {
+                    if let Some(s) = it.next() {
+                        <Self as Atom>::parse_from(s)
+                    } else {
+                        Err(InputExhaust)
+                    }
+                }
+            } )*
+        };
+    }
+
+    impl_iterparse_for_atom!(bool char String);
+    impl_iterparse_for_atom!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 );
+    impl_iterparse_for_atom!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
+    impl_iterparse_for_atom!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
+
+    macro_rules! impl_iterparse {
+        ($($t:ident) *) => {
+            impl<$($t),*> IterParse for ($($t),*) where $($t: IterParse),* {
+                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
+                where
+                    It: Iterator<Item = &'t str>,
+                {
+                    Ok(( $($t::parse_from(it)?),* ))
+                }
+            }
+        };
+    }
+
+    impl_iterparse!();
+    impl_iterparse!(A B);
+    impl_iterparse!(A B C);
+    impl_iterparse!(A B C D);
+    impl_iterparse!(A B C D E);
+    impl_iterparse!(A B C D E F);
+    impl_iterparse!(A B C D E F G);
+    impl_iterparse!(A B C D E F G H);
+    impl_iterparse!(A B C D E F G H I);
+    impl_iterparse!(A B C D E F G H I J);
+    impl_iterparse!(A B C D E F G H I J K);
+    impl_iterparse!(A B C D E F G H I J K L);
+    impl_iterparse!(A B C D E F G H I J K L M);
+
+    pub struct Tokenizer<It> {
+        it: It,
+    }
+
+    impl<'arg, 'str: 'arg, It> Tokenizer<It> {
+        pub fn new(s: &'str str, split: impl FnOnce(&'arg str) -> It) -> Self {
             Self { it: split(s) }
         }
     }
 
-    impl<'a, I: Iterator<Item = &'a str>> Splitter<I> {
-        pub fn next<T: FromStr>(&mut self) -> T {
-            self.it.next().unwrap().parse().ok().unwrap()
+    impl<'t, It> Tokenizer<It>
+    where
+        It: Iterator<Item = &'t str>,
+    {
+        pub fn next<T: IterParse>(&mut self) -> T {
+            T::parse_from(&mut self.it).unwrap()
         }
-        pub fn next_str(&mut self) -> &'a str {
+        pub fn next_str(&mut self) -> &'t str {
             self.it.next().unwrap()
         }
-        pub fn next_opt<T: FromStr>(&mut self) -> Option<T> {
-            self.it.next().and_then(|s| s.parse().ok())
+        pub fn next_ok<T: IterParse>(&mut self) -> Result<T, InputError<'t>> {
+            T::parse_from(&mut self.it)
         }
-        pub fn next_str_opt(&mut self) -> Option<&'a str> {
+        pub fn next_str_ok(&mut self) -> Option<&'t str> {
             self.it.next()
+        }
+        pub fn next_iter<T: IterParse>(&mut self) -> impl Iterator<Item = T> + '_ {
+            std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
+            // AtCoder compatible implementation
+            // std::iter::repeat_with(move || self.next_ok())
+            //     .take_while(|x| x.is_some())
+            //     .flatten()
         }
     }
 }
