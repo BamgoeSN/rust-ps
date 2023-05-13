@@ -113,7 +113,7 @@ mod ioutil {
     macro_rules! impl_atom_from_fromstr {
         ($($t:ty) *) => { $(
             impl Atom<'_> for $t {
-                fn parse(text: &'_ str) -> Result<'_, Self> {
+                fn parse(text: &str) -> Result<Self> {
                     text.parse().map_err(|_| ParseError(text))
                 }
             }
