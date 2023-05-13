@@ -22,7 +22,8 @@ fn main() -> i32 {
 
 #[allow(unused)]
 mod fastio {
-    use std::{fmt, io, num::*, slice::*, str::*};
+    use super::ioutil::*;
+    use std::io;
 
     #[link(name = "c")]
     extern "C" {}
@@ -32,14 +33,62 @@ mod fastio {
         Box::leak(buf.into_boxed_str())
     }
 
+    pub struct Tokenizer<It> {
+        it: It,
+    }
+
+    impl<'i, 's: 'i, It> Tokenizer<It> {
+        pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self {
+            Self { it: split(text) }
+        }
+    }
+
+    impl<'t, It> Tokenizer<It>
+    where
+        It: Iterator<Item = &'t str>,
+    {
+        pub fn next_ok<T: IterParse<'t>>(&mut self) -> Result<'t, T> {
+            T::parse_from_iter(&mut self.it)
+        }
+        pub fn next<T: IterParse<'t>>(&mut self) -> T {
+            self.next_ok().unwrap()
+        }
+        pub fn next_map<T, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N]
+        where
+            T: IterParse<'t>,
+        {
+            let x: [T; N] = self.next();
+            x.map(f)
+        }
+        pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ {
+            std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
+        }
+        pub fn next_collect<T, V>(&mut self, size: usize) -> V
+        where
+            T: IterParse<'t>,
+            V: FromIterator<T>,
+        {
+            self.next_it().take(size).collect()
+        }
+    }
+}
+
+mod ioutil {
+    use std::{
+        fmt::{Result as FRes, *},
+        num::*,
+    };
+
     pub enum InputError<'t> {
         InputExhaust,
         ParseError(&'t str),
     }
     use InputError::*;
 
-    impl<'t> fmt::Debug for InputError<'t> {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    pub type Result<'t, T> = std::result::Result<T, InputError<'t>>;
+
+    impl<'t> Debug for InputError<'t> {
+        fn fmt(&self, f: &mut Formatter<'_>) -> FRes {
             match self {
                 InputExhaust => f.debug_struct("InputExhaust").finish(),
                 ParseError(s) => f.debug_struct("ParseError").field("str", s).finish(),
@@ -47,37 +96,73 @@ mod fastio {
         }
     }
 
-    pub trait Atom: Sized {
-        fn parse_from(s: &str) -> Result<Self, InputError>;
+    pub trait Atom<'t>: Sized {
+        fn parse(text: &'t str) -> Result<'t, Self>;
     }
 
-    pub trait IterParse: Sized {
-        fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>>
-        where
-            It: Iterator<Item = &'t str>;
+    impl<'t> Atom<'t> for &'t str {
+        fn parse(text: &'t str) -> Result<'t, Self> {
+            Ok(text)
+        }
     }
 
-    macro_rules! impl_trait_for_fromstr {
+    macro_rules! impl_atom_from_fromstr {
         ($($t:ty) *) => { $(
-            impl Atom for $t { fn parse_from(s: &str) -> Result<Self, InputError> { s.parse().map_err(|_| ParseError(s)) } }
-            impl IterParse for $t {
-                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>> where It: Iterator<Item = &'t str> {
-                    it.next().map_or( Err(InputExhaust), <Self as Atom>::parse_from )
+            impl Atom<'_> for $t {
+                fn parse(text: &'_ str) -> Result<'_, Self> {
+                    text.parse().map_err(|_| ParseError(text))
                 }
             }
         )* };
     }
 
-    impl_trait_for_fromstr!(bool char String);
-    impl_trait_for_fromstr!(f32 f64 i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize);
-    impl_trait_for_fromstr!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
-    impl_trait_for_fromstr!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
+    impl_atom_from_fromstr!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 bool char String);
+    impl_atom_from_fromstr!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
+
+    pub trait IterParse<'t>: Sized {
+        fn parse_from_iter<'s, It>(it: &'s mut It) -> Result<'t, Self>
+        where
+            't: 's,
+            It: Iterator<Item = &'t str>;
+    }
+
+    impl<'t, A> IterParse<'t> for A
+    where
+        A: Atom<'t>,
+    {
+        fn parse_from_iter<'s, It>(it: &'s mut It) -> Result<'t, Self>
+        where
+            't: 's,
+            It: Iterator<Item = &'t str>,
+        {
+            it.next().map_or(Err(InputExhaust), <Self as Atom>::parse)
+        }
+    }
+
+    impl<'t, A, const N: usize> IterParse<'t> for [A; N]
+    where
+        A: IterParse<'t>,
+    {
+        fn parse_from_iter<'s, It>(it: &'s mut It) -> Result<'t, Self>
+        where
+            't: 's,
+            It: Iterator<Item = &'t str>,
+        {
+            use std::mem::*;
+            let mut x: [MaybeUninit<A>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+            for p in x.iter_mut() {
+                *p = MaybeUninit::new(A::parse_from_iter(it)?);
+            }
+            Ok(unsafe { transmute_copy(&x) })
+        }
+    }
 
     macro_rules! impl_iterparse_for_tuple {
         ($($t:ident) *) => {
-            impl<$($t),*> IterParse for ($($t),*) where $($t: IterParse),* {
-                fn parse_from<'s, 't: 's, It>(it: &'s mut It) -> Result<Self, InputError<'t>> where It: Iterator<Item = &'t str> {
-                    Ok(( $($t::parse_from(it)?),* ))
+            impl<'t, $($t),*> IterParse<'t> for ($($t),*) where $($t: IterParse<'t>),* {
+                fn parse_from_iter<'s, It>(_it: &'s mut It) -> Result<'t, Self>
+                where 't: 's, It: Iterator<Item = &'t str> {
+                    Ok(($($t::parse_from_iter(_it)?),*))
                 }
             }
         };
@@ -94,37 +179,4 @@ mod fastio {
     impl_iterparse_for_tuple!(A B C D E F G H I);
     impl_iterparse_for_tuple!(A B C D E F G H I J);
     impl_iterparse_for_tuple!(A B C D E F G H I J K);
-    impl_iterparse_for_tuple!(A B C D E F G H I J K L);
-    impl_iterparse_for_tuple!(A B C D E F G H I J K L M);
-
-    pub struct Tokenizer<It> {
-        it: It,
-    }
-
-    impl<'arg, 'str: 'arg, It> Tokenizer<It> {
-        pub fn new(s: &'str str, split: impl FnOnce(&'arg str) -> It) -> Self {
-            Self { it: split(s) }
-        }
-    }
-
-    impl<'t, It> Tokenizer<It>
-    where
-        It: Iterator<Item = &'t str>,
-    {
-        pub fn next<T: IterParse>(&mut self) -> T {
-            T::parse_from(&mut self.it).unwrap()
-        }
-        pub fn next_str(&mut self) -> &'t str {
-            self.it.next().unwrap()
-        }
-        pub fn next_ok<T: IterParse>(&mut self) -> Result<T, InputError<'t>> {
-            T::parse_from(&mut self.it)
-        }
-        pub fn next_str_ok(&mut self) -> Option<&'t str> {
-            self.it.next()
-        }
-        pub fn next_iter<T: IterParse>(&mut self) -> impl Iterator<Item = T> + '_ {
-            std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
-        }
-    }
 }
