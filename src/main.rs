@@ -50,9 +50,11 @@ mod fastio {
         pub fn next_ok<T: IterParse<'t>>(&mut self) -> Result<'t, T> {
             T::parse_from_iter(&mut self.it)
         }
+
         pub fn next<T: IterParse<'t>>(&mut self) -> T {
             self.next_ok().unwrap()
         }
+
         pub fn next_map<T, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N]
         where
             T: IterParse<'t>,
@@ -60,9 +62,11 @@ mod fastio {
             let x: [T; N] = self.next();
             x.map(f)
         }
+
         pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ {
             std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
         }
+
         pub fn next_collect<T, V>(&mut self, size: usize) -> V
         where
             T: IterParse<'t>,
