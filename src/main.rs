@@ -7,9 +7,6 @@ mod fastio {
     use super::ioutil::*;
     use std::io;
 
-    #[link(name = "c")]
-    extern "C" {}
-
     pub struct Tokenizer<It> {
         it: It,
     }
@@ -144,3 +141,6 @@ macro_rules! print {
 macro_rules! println {
     ($($t:tt)*) => {{ use std::io::*; writeln!(unsafe{ WRITER.as_mut().unwrap_unchecked() }, $($t)*).unwrap(); }};
 }
+
+#[link(name = "c")]
+extern "C" {}
