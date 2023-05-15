@@ -74,6 +74,12 @@ mod ioutil {
         }
     }
 
+    impl<'t> Atom<'t> for &'t [u8] {
+        fn parse(text: &'t str) -> PRes<'t, Self> {
+            Ok(text.as_bytes())
+        }
+    }
+
     macro_rules! impl_atom {
         ($($t:ty) *) => { $(impl Atom<'_> for $t { fn parse(text: &str) -> PRes<Self> { text.parse().map_err(|_| ParseError(text)) } })* };
     }
