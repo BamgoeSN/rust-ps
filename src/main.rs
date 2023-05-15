@@ -78,11 +78,8 @@ mod ioutil {
     }
 
     macro_rules! impl_atom {
-        ($($t:ty) *) => { $(impl Atom<'_> for $t {
-            fn parse(text: &str) -> PRes<Self> { text.parse().map_err(|_| ParseError(text)) }
-        })* };
+        ($($t:ty) *) => { $(impl Atom<'_> for $t { fn parse(text: &str) -> PRes<Self> { text.parse().map_err(|_| ParseError(text)) } })* };
     }
-
     impl_atom!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 bool char String NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
 
     pub trait IterParse<'t>: Sized {
@@ -114,20 +111,11 @@ mod ioutil {
         }
     }
 
-    macro_rules! impl_recur {
-        ($u:ident$($t:ident)+) => { impl_recur!($($t)+); impl_tp!($u$($t)+); };
-        ($u:ident) => { impl_tp!(); };
+    macro_rules! impl_tuple {
+        ($u:ident) => {};
+        ($u:ident $($t:ident)+) => { impl<'t, $u: IterParse<'t>, $($t: IterParse<'t>),+> IterParse<'t> for ($u, $($t),+) { fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's { Ok(($u::parse_from_iter(_it)?, $($t::parse_from_iter(_it)?),+)) } } };
     }
-
-    macro_rules! impl_tp {
-        ($($t:ident) *) => {
-            impl<'t, $($t: IterParse<'t>),*> IterParse<'t> for ($($t),*) {
-                fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's { Ok(($($t::parse_from_iter(_it)?),*)) }
-            }
-        };
-    }
-
-    impl_recur!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
+    impl_tuple!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
 }
 
 #[no_mangle]
