@@ -79,9 +79,7 @@ mod ioutil {
 
     macro_rules! impl_atom {
         ($($t:ty) *) => { $(impl Atom<'_> for $t {
-            fn parse(text: &str) -> PRes<Self> {
-                text.parse().map_err(|_| ParseError(text))
-            }
+            fn parse(text: &str) -> PRes<Self> { text.parse().map_err(|_| ParseError(text)) }
         })* };
     }
 
@@ -116,17 +114,20 @@ mod ioutil {
         }
     }
 
-    macro_rules! impl_tuple {
-        ($($($t:ident) *),*) => {
-            $(impl<'t, $($t: IterParse<'t>),*> IterParse<'t> for ($($t),*) {
-                fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's {
-                    Ok(($($t::parse_from_iter(_it)?),*))
-                }
-            })*
+    macro_rules! impl_recur {
+        ($u:ident$($t:ident)+) => { impl_recur!($($t)+); impl_tp!($u$($t)+); };
+        ($u:ident) => { impl_tp!(); };
+    }
+
+    macro_rules! impl_tp {
+        ($($t:ident) *) => {
+            impl<'t, $($t: IterParse<'t>),*> IterParse<'t> for ($($t),*) {
+                fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's { Ok(($($t::parse_from_iter(_it)?),*)) }
+            }
         };
     }
 
-    impl_tuple!(, A B, A B C, A B C D, A B C D E);
+    impl_recur!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
 }
 
 #[no_mangle]
