@@ -116,7 +116,6 @@ mod ioutil {
 }
 
 #[no_mangle]
-#[target_feature(enable = "avx2")]
 unsafe fn main() -> i32 {
     use std::io::*;
 
