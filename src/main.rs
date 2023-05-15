@@ -116,8 +116,9 @@ mod ioutil {
 
     macro_rules! impl_tuple {
         ($u:ident) => {};
-        ($u:ident $($t:ident)+) => { impl<'t, $u: IterParse<'t>, $($t: IterParse<'t>),+> IterParse<'t> for ($u, $($t),+) { fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's { Ok(($u::parse_from_iter(_it)?, $($t::parse_from_iter(_it)?),+)) } } };
+        ($u:ident $($t:ident)+) => { impl<'t, $u: IterParse<'t>, $($t: IterParse<'t>),+> IterParse<'t> for ($u, $($t),+) { fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's { Ok(($u::parse_from_iter(_it)?, $($t::parse_from_iter(_it)?),+)) } } impl_tuple!($($t) +); };
     }
+
     impl_tuple!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
 }
 
