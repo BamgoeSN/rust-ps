@@ -1,11 +1,13 @@
 #![no_main]
 
+#[allow(unused)]
+use std::{cmp::*, collections::*, fmt::*, ops::*};
+
 fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
 #[allow(unused)]
 mod fastio {
 	use super::ioutil::*;
-	use std::io;
 
 	pub struct Tokenizer<It> {
 		it: It,
@@ -132,7 +134,8 @@ unsafe fn main() -> i32 {
 	0
 }
 
-static mut WRITER: Option<std::io::BufWriter<std::io::StdoutLock>> = None;
+use std::io::*;
+static mut WRITER: Option<BufWriter<StdoutLock>> = None;
 #[macro_export]
 macro_rules! print {
     ($($t:tt)*) => {{ use std::io::*; write!(unsafe{ WRITER.as_mut().unwrap_unchecked() }, $($t)*).unwrap(); }};
