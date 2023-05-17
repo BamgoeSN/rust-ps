@@ -118,14 +118,24 @@ mod ioutil {
 	impl_tuple!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
 }
 
+#[link(name = "c")]
+extern "C" {
+	fn mmap(addr: usize, len: usize, p: i32, f: i32, fd: i32, o: i64) -> *mut u8;
+	fn fstat(fd: i32, stat: *mut usize) -> i32;
+}
+
+fn get_input() -> &'static str {
+	let mut stat = [0; 20];
+	unsafe { fstat(0, (&mut stat).as_mut_ptr()) };
+	let buffer = unsafe { mmap(0, stat[6], 1, 2, 0, 0) };
+	unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(buffer, stat[6])) }
+}
+
 #[no_mangle]
 unsafe fn main() -> i32 {
 	use std::io::*;
 
-	let mut sc = fastio::Tokenizer::new(
-		Box::leak(read_to_string(stdin()).unwrap().into_boxed_str()),
-		|s| s.split_ascii_whitespace(),
-	);
+	let mut sc = fastio::Tokenizer::new(get_input(), |s| s.split_ascii_whitespace());
 	let stdout = stdout();
 	WRITER = Some(BufWriter::new(stdout.lock()));
 
@@ -144,6 +154,3 @@ macro_rules! print {
 macro_rules! println {
     ($($t:tt)*) => {{ use std::io::*; writeln!(unsafe{ WRITER.as_mut().unwrap_unchecked() }, $($t)*).unwrap(); }};
 }
-
-#[link(name = "c")]
-extern "C" {}
