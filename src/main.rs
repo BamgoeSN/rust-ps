@@ -1,7 +1,7 @@
 #![no_main]
 
 #[allow(unused)]
-use std::{cmp::*, collections::*, fmt::*, ops::*};
+use std::{cmp::*, collections::*, fmt::*, io::*, iter::*, ops::*};
 
 fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
@@ -134,17 +134,14 @@ fn get_input() -> &'static str {
 #[no_mangle]
 unsafe fn main() -> i32 {
 	use std::io::*;
-
 	let mut sc = fastio::Tokenizer::new(get_input(), |s| s.split_ascii_whitespace());
 	let stdout = stdout();
 	WRITER = Some(BufWriter::new(stdout.lock()));
-
 	solve(&mut sc);
 	WRITER.as_mut().unwrap_unchecked().flush().ok();
 	0
 }
 
-use std::io::*;
 static mut WRITER: Option<BufWriter<StdoutLock>> = None;
 #[macro_export]
 macro_rules! print {
