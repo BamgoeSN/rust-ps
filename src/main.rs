@@ -1,7 +1,7 @@
 #![no_main]
 
 #[allow(unused)]
-use std::{cmp::*, collections::*, fmt::*, io::*, iter::*, ops::*};
+use std::{cmp::*, collections::*, fmt::*, io::*, iter, mem::*, num::*, ops::*};
 
 fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
