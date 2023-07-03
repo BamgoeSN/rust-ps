@@ -14,33 +14,22 @@ mod fastio {
 	}
 
 	impl<'i, 's: 'i, It> Tokenizer<It> {
-		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self {
-			Self { it: split(text) }
-		}
+		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
 	}
 
 	impl<'t, It: Iterator<Item = &'t str>> Tokenizer<It> {
-		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> {
-			T::parse_from_iter(&mut self.it)
-		}
+		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
 
 		pub fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
 
-		pub fn next_map<T: IterParse<'t>, U, const N: usize>(
-			&mut self,
-			f: impl FnMut(T) -> U,
-		) -> [U; N] {
+		pub fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
 			let x: [T; N] = self.next();
 			x.map(f)
 		}
 
-		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ {
-			std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
-		}
+		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
 
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V {
-			self.next_it().take(size).collect()
-		}
+		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
 	}
 }
 
