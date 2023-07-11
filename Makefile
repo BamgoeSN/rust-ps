@@ -17,6 +17,9 @@ all: $(TARGET)
 run: $(RELEASE)
 	$(BACKTRACE) $^ < $(INPUT)
 
+boj:
+	cargo run --bin autocheck -- $(ID)
+
 at:
 	cargo +1.42.0 run < $(INPUT)
 
