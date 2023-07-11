@@ -115,7 +115,7 @@ extern "C" {
 
 fn get_input() -> &'static str {
 	let mut stat = [0; 20];
-	unsafe { fstat(0, (&mut stat).as_mut_ptr()) };
+	unsafe { fstat(0, stat.as_mut_ptr()) };
 	let buffer = unsafe { mmap(0, stat[6], 1, 2, 0, 0) };
 	unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(buffer, stat[6])) }
 }
