@@ -28,7 +28,7 @@ fn main() {
 		print!("Sample {}... ", i + 1);
 		stdout().flush().unwrap();
 		let result = run_exec(&exec, &input);
-		if result.as_ref().map_or(false, |ret| ret.trim_end().lines().zip(output.trim_end().lines()).all(|(x, y)| x == y)) {
+		if result.as_ref().map_or(false, |ret| check_if_correct(ret, &output)) {
 			// Correct
 			println!("ok");
 		} else {
@@ -48,4 +48,10 @@ fn main() {
 	}
 
 	fs::remove_file("./a.out").expect("Failed to remove the generated executable");
+}
+
+fn check_if_correct(ret: &str, out: &str) -> bool {
+	let xarr: Vec<_> = ret.trim_end().lines().collect();
+	let yarr: Vec<_> = out.trim_end().lines().collect();
+	xarr == yarr
 }
