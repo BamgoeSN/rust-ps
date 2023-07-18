@@ -18,7 +18,7 @@ run: $(RELEASE)
 	$(BACKTRACE) $^ < $(INPUT)
 
 boj:
-	cargo run --bin autocheck -- $(ID)
+	cargo run --bin autocheck -- $(id)
 
 at:
 	cargo +1.42.0 run < $(INPUT)
