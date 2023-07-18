@@ -1,5 +1,6 @@
-PROJECT = rust-ps
-SOURCE = ./src/main.rs
+PROJECT = main
+SOURCE = ./src/lib.rs
+GENERATED = ./src/bin/main.rs
 TARGET = ./target/debug/$(PROJECT)
 RELEASE = ./target/release/$(PROJECT)
 INPUT = ./input.txt
@@ -18,6 +19,7 @@ run: $(RELEASE)
 	$(BACKTRACE) $^ < $(INPUT)
 
 boj:
+	cargo oj
 	cargo run --bin autocheck -- $(id)
 
 at:
@@ -31,7 +33,10 @@ memchk: $(TARGET)
 	valgrind --leak-check=full --show-leak-kinds=all --log-file=$(MEMCHK) -v --error-limit=no $^ < $(INPUT)
 
 $(TARGET): $(SOURCE)
-	cargo build
+	cargo oj
+	cargo build --bin=main
 
 $(RELEASE): $(SOURCE)
-	cargo build --release
+	cargo oj
+	cargo build --release --bin=main
+

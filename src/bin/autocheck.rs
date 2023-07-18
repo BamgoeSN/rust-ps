@@ -10,7 +10,7 @@ use std::{
 fn main() {
 	print!("Compiling the code... ");
 	stdout().flush().unwrap();
-	let exec = compile("./src/main.rs", "./a.out").expect("Failed to compile");
+	let exec = compile("./src/bin/main.rs", "./a.out").expect("Failed to compile");
 	println!("Done.");
 	stdout().flush().unwrap();
 

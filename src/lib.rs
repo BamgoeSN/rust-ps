@@ -1,64 +1,51 @@
 #![no_main]
 
+pub(crate) mod pslib;
+
+use pslib::*;
 #[allow(unused)]
 use std::{cmp::*, collections::*, fmt::*, io::*, iter, mem::*, num::*, ops::*};
 
-fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {
-	let (n, l): (usize, u64) = sc.next();
-	let mut arr: Vec<u64> = sc.next_collect(n);
-	arr.sort_unstable();
-	let mut cnt = 0;
-	while let Some(x) = arr.pop() {
-		cnt += 1;
-		while let Some(&v) = arr.last() {
-			if x - v >= l {
-				break;
-			} else {
-				arr.pop();
-			}
-		}
-	}
-	println!("{cnt}");
-}
+pub(crate) fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
 #[allow(unused)]
 mod fastio {
 	use super::ioutil::*;
 
-	pub struct Tokenizer<It> {
+	pub(crate) struct Tokenizer<It> {
 		it: It,
 	}
 
 	impl<'i, 's: 'i, It> Tokenizer<It> {
-		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
+		pub(crate) fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
 	}
 
 	impl<'t, It: Iterator<Item = &'t str>> Tokenizer<It> {
-		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
+		pub(crate) fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
 
-		pub fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
+		pub(crate) fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
 
-		pub fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
+		pub(crate) fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
 			let x: [T; N] = self.next();
 			x.map(f)
 		}
 
-		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
+		pub(crate) fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
 
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
+		pub(crate) fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
 	}
 }
 
 mod ioutil {
 	use std::{fmt::*, num::*};
 
-	pub enum InputError<'t> {
+	pub(crate) enum InputError<'t> {
 		InputExhaust,
 		ParseError(&'t str),
 	}
 	use InputError::*;
 
-	pub type PRes<'t, T> = std::result::Result<T, InputError<'t>>;
+	pub(crate) type PRes<'t, T> = std::result::Result<T, InputError<'t>>;
 
 	impl<'t> Debug for InputError<'t> {
 		fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -69,7 +56,7 @@ mod ioutil {
 		}
 	}
 
-	pub trait Atom<'t>: Sized {
+	pub(crate) trait Atom<'t>: Sized {
 		fn parse(text: &'t str) -> PRes<'t, Self>;
 	}
 
@@ -86,7 +73,7 @@ mod ioutil {
     }
 	impl_atom!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 bool char String NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
 
-	pub trait IterParse<'t>: Sized {
+	pub(crate) trait IterParse<'t>: Sized {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
 		where
 			't: 's;
@@ -137,7 +124,7 @@ fn get_input() -> &'static str {
 }
 
 #[no_mangle]
-unsafe fn main() -> i32 {
+pub unsafe fn main() -> i32 {
 	use std::io::*;
 	let mut sc = fastio::Tokenizer::new(get_input(), |s| s.split_ascii_whitespace());
 	let stdout = stdout();
