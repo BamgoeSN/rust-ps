@@ -3,23 +3,7 @@
 #[allow(unused)]
 use std::{cmp::*, collections::*, fmt::*, io::*, iter, mem::*, num::*, ops::*};
 
-fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {
-	let (n, l): (usize, u64) = sc.next();
-	let mut arr: Vec<u64> = sc.next_collect(n);
-	arr.sort_unstable();
-	let mut cnt = 0;
-	while let Some(x) = arr.pop() {
-		cnt += 1;
-		while let Some(&v) = arr.last() {
-			if x - v >= l {
-				break;
-			} else {
-				arr.pop();
-			}
-		}
-	}
-	println!("{cnt}");
-}
+fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
 #[allow(unused)]
 mod fastio {
