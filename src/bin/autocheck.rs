@@ -88,7 +88,7 @@ mod core {
 		}
 
 		fn get_html(url: &str) -> Html {
-			let request = reqwest::blocking::get(url).unwrap().text().unwrap();
+			let request = ureq::get(url).call().unwrap().into_string().unwrap();
 			Html::parse_document(&request)
 		}
 	}
