@@ -14,22 +14,32 @@ mod fastio {
 	}
 
 	impl<'i, 's: 'i, It> Tokenizer<It> {
-		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
+		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self {
+			Self { it: split(text) }
+		}
 	}
 
 	impl<'t, It: Iterator<Item = &'t str>> Tokenizer<It> {
-		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
+		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> {
+			T::parse_from_iter(&mut self.it)
+		}
 
-		pub fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
+		pub fn next<T: IterParse<'t>>(&mut self) -> T {
+			self.next_ok().unwrap()
+		}
 
 		pub fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
 			let x: [T; N] = self.next();
 			x.map(f)
 		}
 
-		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
+		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ {
+			std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
+		}
 
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
+		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V {
+			self.next_it().take(size).collect()
+		}
 	}
 }
 
@@ -58,11 +68,15 @@ mod ioutil {
 	}
 
 	impl<'t> Atom<'t> for &'t str {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text) }
+		fn parse(text: &'t str) -> PRes<'t, Self> {
+			Ok(text)
+		}
 	}
 
 	impl<'t> Atom<'t> for &'t [u8] {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text.as_bytes()) }
+		fn parse(text: &'t str) -> PRes<'t, Self> {
+			Ok(text.as_bytes())
+		}
 	}
 
 	macro_rules! impl_atom {
@@ -107,17 +121,13 @@ mod ioutil {
 	impl_tuple!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
 }
 
-#[link(name = "c")]
-extern "C" {
-	fn mmap(addr: usize, len: usize, p: i32, f: i32, fd: i32, o: i64) -> *mut u8;
-	fn fstat(fd: i32, stat: *mut usize) -> i32;
-}
+// #[link(name = "c")]
+// extern "C" {}
 
 fn get_input() -> &'static str {
-	let mut stat = [0; 20];
-	unsafe { fstat(0, stat.as_mut_ptr()) };
-	let buffer = unsafe { mmap(0, stat[6], 1, 2, 0, 0) };
-	unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(buffer, stat[6])) }
+	use std::io::*;
+	let input = read_to_string(stdin()).unwrap();
+	Box::leak(input.into_boxed_str())
 }
 
 #[no_mangle]
