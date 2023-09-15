@@ -3,140 +3,184 @@
 #[allow(unused)]
 use std::{cmp::*, collections::*, fmt::*, io::*, iter, mem::*, num::*, ops::*};
 
-fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
+fn solve<R: Read>(mut rd: IStream<R>) {}
+
+#[no_mangle]
+fn main() -> i32 {
+	solve(IStream::default());
+	flush!();
+	0
+}
 
 #[allow(unused)]
 mod fastio {
-	use super::ioutil::*;
+	pub use super::ioutil::*;
+	use std::{
+		io::{read_to_string, stdin, Read, StdinLock},
+		str::from_utf8,
+	};
 
-	pub struct Tokenizer<It> {
-		it: It,
+	pub const BUFFER_SIZE: usize = 1 << 17;
+
+	#[derive(Debug)]
+	pub struct IStream<R> {
+		buf: Box<[u8; BUFFER_SIZE]>,
+		off: usize,
+		len: usize,
+		inp: R,
 	}
 
-	impl<'i, 's: 'i, It> Tokenizer<It> {
-		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
-	}
-
-	impl<'t, It: Iterator<Item = &'t str>> Tokenizer<It> {
-		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
-
-		pub fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
-
-		pub fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
-			let x: [T; N] = self.next();
-			x.map(f)
-		}
-
-		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
-
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
-	}
-}
-
-mod ioutil {
-	use std::{fmt::*, num::*};
-
-	pub enum InputError<'t> {
-		InputExhaust,
-		ParseError(&'t str),
-	}
-	use InputError::*;
-
-	pub type PRes<'t, T> = std::result::Result<T, InputError<'t>>;
-
-	impl<'t> Debug for InputError<'t> {
-		fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-			match self {
-				InputExhaust => f.debug_struct("InputExhaust").finish(),
-				ParseError(s) => f.debug_struct("ParseError").field("str", s).finish(),
+	impl Default for IStream<StdinLock<'_>> {
+		fn default() -> Self {
+			Self {
+				buf: Box::new([0u8; BUFFER_SIZE]),
+				off: BUFFER_SIZE,
+				len: BUFFER_SIZE,
+				inp: stdin().lock(),
 			}
 		}
 	}
 
-	pub trait Atom<'t>: Sized {
-		fn parse(text: &'t str) -> PRes<'t, Self>;
-	}
+	impl<R: Read> IStream<R> {
+		fn skip_whitespace(&mut self) {
+			while self.len > 0 {
+				if let Some(i) = self.buf[self.off..self.len].iter().position(|&b| b > b' ') {
+					self.off += i;
+					break;
+				}
+				self.fill();
+			}
+		}
 
-	impl<'t> Atom<'t> for &'t str {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text) }
-	}
+		fn remain(&self) -> &[u8] {
+			&self.buf[self.off..self.len]
+		}
 
-	impl<'t> Atom<'t> for &'t [u8] {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text.as_bytes()) }
-	}
+		fn fill(&mut self) {
+			let len = self.inp.read(self.buf.as_mut_slice()).unwrap();
+			(self.off, self.len) = (0, len);
+		}
 
-	macro_rules! impl_atom {
-        ($($t:ty) *) => { $(impl Atom<'_> for $t { fn parse(text: &str) -> PRes<Self> { text.parse().map_err(|_| ParseError(text)) } })* };
-    }
-	impl_atom!(u8 u16 u32 u64 u128 usize i8 i16 i32 i64 i128 isize f32 f64 bool char String NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
-
-	pub trait IterParse<'t>: Sized {
-		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where
-			't: 's;
-	}
-
-	impl<'t, A: Atom<'t>> IterParse<'t> for A {
-		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where
-			't: 's,
-		{
-			it.next().map_or(Err(InputExhaust), <Self as Atom>::parse)
+		fn next_token(&mut self) -> Option<String> {
+			self.skip_whitespace();
+			let mut s = String::new();
+			loop {
+				if self.len == 0 {
+					return None;
+				}
+				let remain = self.remain();
+				if let Some(i) = remain.iter().position(|&b| b <= b' ') {
+					s.push_str(from_utf8(&remain[..i]).unwrap());
+					self.off += i;
+					break;
+				} else {
+					s.push_str(from_utf8(remain).unwrap());
+					self.fill();
+				}
+			}
+			Some(s)
 		}
 	}
 
-	impl<'t, A: IterParse<'t>, const N: usize> IterParse<'t> for [A; N] {
-		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where
-			't: 's,
-		{
+	impl<R: Read> Iterator for IStream<R> {
+		type Item = String;
+		fn next(&mut self) -> Option<Self::Item> {
+			self.next_token()
+		}
+	}
+
+	impl<R: Read> IStream<R> {
+		pub fn read_checked<A: IterParse<<Self as Iterator>::Item>>(&mut self) -> Option<A> {
+			A::parse_from_iter(self)
+		}
+		pub fn read<A: IterParse<<Self as Iterator>::Item>>(&mut self) -> A {
+			self.read_checked().unwrap()
+		}
+		pub fn read_map<A: IterParse<<Self as Iterator>::Item>, B, const N: usize>(&mut self, f: impl FnMut(A) -> B) -> [B; N] {
+			self.read::<[A; N]>().map(f)
+		}
+		pub fn read_iter<A: IterParse<<Self as Iterator>::Item>>(&mut self) -> impl Iterator<Item = A> + '_ {
+			std::iter::repeat_with(move || self.read_checked()).map_while(|x| x)
+		}
+		pub fn read_collect<A: IterParse<<Self as Iterator>::Item>, V: FromIterator<A>>(&mut self, size: usize) -> V {
+			self.read_iter().take(size).collect()
+		}
+	}
+}
+use fastio::*;
+
+mod ioutil {
+	use std::{num::*, str::FromStr};
+
+	pub trait Atom: FromStr {}
+
+	macro_rules! impl_atom {
+		($($t:ty)+) => {$( impl Atom for $t {} )+};
+	}
+	impl_atom!(f32 f64 bool);
+	impl_atom!(i8 i16 i32 i64 i128 isize);
+	impl_atom!(u8 u16 u32 u64 u128 usize);
+	impl_atom!(NonZeroI8 NonZeroI16 NonZeroI32 NonZeroI64 NonZeroI128 NonZeroIsize);
+	impl_atom!(NonZeroU8 NonZeroU16 NonZeroU32 NonZeroU64 NonZeroU128 NonZeroUsize);
+	impl_atom!(String);
+
+	pub trait IterParse<T: AsRef<str>>: Sized {
+		fn parse_from_iter<It: Iterator<Item = T>>(it: &mut It) -> Option<Self>;
+	}
+
+	impl<A: Atom, T: AsRef<str>> IterParse<T> for A {
+		fn parse_from_iter<It: Iterator<Item = T>>(it: &mut It) -> Option<Self> {
+			it.next().and_then(|s| A::from_str(s.as_ref()).ok())
+		}
+	}
+
+	impl<A: IterParse<T>, const N: usize, T: AsRef<str>> IterParse<T> for [A; N] {
+		fn parse_from_iter<It: Iterator<Item = T>>(it: &mut It) -> Option<Self> {
 			use std::mem::*;
 			let mut x: [MaybeUninit<A>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 			for p in x.iter_mut() {
 				*p = MaybeUninit::new(A::parse_from_iter(it)?);
 			}
-			Ok(unsafe { transmute_copy(&x) })
+			Some(unsafe { transmute_copy(&x) })
 		}
 	}
 
 	macro_rules! impl_tuple {
-        ($u:ident) => {};
-        ($u:ident $($t:ident)+) => { impl<'t, $u: IterParse<'t>, $($t: IterParse<'t>),+> IterParse<'t> for ($u, $($t),+) { fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(_it: &'s mut It) -> PRes<'t, Self> where 't: 's { Ok(($u::parse_from_iter(_it)?, $($t::parse_from_iter(_it)?),+)) } } impl_tuple!($($t) +); };
-    }
+		($u:ident) => {};
+		($u:ident $($t:ident)+) => {
+			impl<$u: IterParse<T>, $($t: IterParse<T>),+, T: AsRef<str>> IterParse<T> for ($u, $($t),+) {
+				fn parse_from_iter<It: Iterator<Item = T>>(it: &mut It) -> Option<Self> {
+					Some(($u::parse_from_iter(it)?, $($t::parse_from_iter(it)?),+))
+				}
+			}
+			impl_tuple!($($t)+);
+		};
+	}
 
-	impl_tuple!(Q W E R T Y U I O P A S D F G H J K L Z X C V B N M);
+	impl_tuple!(Q W E R TT Y U I O P A S D F G H J K L Z X C V B N M);
 }
 
 #[link(name = "c")]
-extern "C" {
-	fn mmap(addr: usize, len: usize, p: i32, f: i32, fd: i32, o: i64) -> *mut u8;
-	fn fstat(fd: i32, stat: *mut usize) -> i32;
+extern "C" {}
+
+use std::cell::RefCell;
+thread_local! {
+	static STDOUT: RefCell<BufWriter<StdoutLock<'static>>>
+		= RefCell::new(BufWriter::with_capacity(crate::fastio::BUFFER_SIZE, stdout().lock()));
 }
 
-fn get_input() -> &'static str {
-	let mut stat = [0; 20];
-	unsafe { fstat(0, stat.as_mut_ptr()) };
-	let buffer = unsafe { mmap(0, stat[6], 1, 2, 0, 0) };
-	unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(buffer, stat[6])) }
-}
-
-#[no_mangle]
-unsafe fn main() -> i32 {
-	use std::io::*;
-	let mut sc = fastio::Tokenizer::new(get_input(), |s| s.split_ascii_whitespace());
-	let stdout = stdout();
-	WRITER = Some(BufWriter::new(stdout.lock()));
-	solve(&mut sc);
-	WRITER.as_mut().unwrap_unchecked().flush().ok();
-	0
-}
-
-static mut WRITER: Option<BufWriter<StdoutLock>> = None;
-#[macro_export]
-macro_rules! print {
-    ($($t:tt)*) => {{ use std::io::*; write!(unsafe{ WRITER.as_mut().unwrap_unchecked() }, $($t)*).unwrap(); }};
-}
+use std::io::Write;
 #[macro_export]
 macro_rules! println {
-    ($($t:tt)*) => {{ use std::io::*; writeln!(unsafe{ WRITER.as_mut().unwrap_unchecked() }, $($t)*).unwrap(); }};
+	($($t:tt)*) => { STDOUT.with(|cell| writeln!(cell.borrow_mut(), $($t)*).unwrap()); };
+}
+#[macro_export]
+macro_rules! print {
+	($($t:tt)*) => { STDOUT.with(|cell| write!(cell.borrow_mut(), $($t)*).unwrap()); };
+}
+#[macro_export]
+macro_rules! flush {
+	() => {
+		STDOUT.with(|cell| cell.borrow_mut().flush().unwrap());
+	};
 }
