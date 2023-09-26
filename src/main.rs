@@ -1,7 +1,7 @@
 #![no_main]
 
 #[allow(unused)]
-use std::{cmp::*, collections::*, fmt::*, io::*, iter, mem::*, num::*, ops::*};
+use std::{cmp::*, collections::*, iter, mem::*, num::*, ops::*};
 
 fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
@@ -14,22 +14,32 @@ mod fastio {
 	}
 
 	impl<'i, 's: 'i, It> Tokenizer<It> {
-		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
+		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self {
+			Self { it: split(text) }
+		}
 	}
 
 	impl<'t, It: Iterator<Item = &'t str>> Tokenizer<It> {
-		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
+		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> {
+			T::parse_from_iter(&mut self.it)
+		}
 
-		pub fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
+		pub fn next<T: IterParse<'t>>(&mut self) -> T {
+			self.next_ok().unwrap()
+		}
 
 		pub fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
 			let x: [T; N] = self.next();
 			x.map(f)
 		}
 
-		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
+		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ {
+			std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
+		}
 
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
+		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V {
+			self.next_it().take(size).collect()
+		}
 	}
 }
 
@@ -58,11 +68,15 @@ mod ioutil {
 	}
 
 	impl<'t> Atom<'t> for &'t str {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text) }
+		fn parse(text: &'t str) -> PRes<'t, Self> {
+			Ok(text)
+		}
 	}
 
 	impl<'t> Atom<'t> for &'t [u8] {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text.as_bytes()) }
+		fn parse(text: &'t str) -> PRes<'t, Self> {
+			Ok(text.as_bytes())
+		}
 	}
 
 	macro_rules! impl_atom {
@@ -131,6 +145,7 @@ unsafe fn main() -> i32 {
 	0
 }
 
+use std::io::{BufWriter, StdoutLock};
 static mut WRITER: Option<BufWriter<StdoutLock>> = None;
 #[macro_export]
 macro_rules! print {
