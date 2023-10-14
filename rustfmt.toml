@@ -1,6 +1,8 @@
 unstable_features = true
 
 fn_single_line = true
+where_single_line = true
+brace_style = "PreferSameLine"
 hard_tabs = true
 imports_granularity = "Crate"
 max_width = 200

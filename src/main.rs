@@ -86,24 +86,19 @@ mod ioutil {
 
 	pub trait IterParse<'t>: Sized {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where
-			't: 's;
+		where 't: 's;
 	}
 
 	impl<'t, A: Atom<'t>> IterParse<'t> for A {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where
-			't: 's,
-		{
+		where 't: 's {
 			it.next().map_or(Err(InputExhaust), <Self as Atom>::parse)
 		}
 	}
 
 	impl<'t, A: IterParse<'t>, const N: usize> IterParse<'t> for [A; N] {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where
-			't: 's,
-		{
+		where 't: 's {
 			use std::mem::*;
 			let mut x: [MaybeUninit<A>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 			for p in x.iter_mut() {
