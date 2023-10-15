@@ -3,37 +3,7 @@
 #[allow(unused)]
 use std::{cmp::*, collections::*, iter, mem::*, num::*, ops::*};
 
-fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {
-	let [tr, tc]: [usize; 2] = sc.next();
-	let grid: Vec<&[u8]> = sc.next_collect(tr);
-	let mut used = vec![false; 26];
-	used[(grid[0][0] - b'A') as usize] = true;
-	let ans = dfs([0, 0], [tr, tc], &grid, &mut used);
-	println!("{ans}");
-}
-
-fn dfs([r, c]: [usize; 2], [tr, tc]: [usize; 2], grid: &[&[u8]], used: &mut [bool]) -> usize {
-	let mut max_d = 0;
-	for (nr, nc) in gen_diriter(r, c, tr, tc) {
-		let i = (grid[nr][nc] - b'A') as usize;
-		if used[i] {
-			continue;
-		}
-		used[i] = true;
-		max_d = max_d.max(dfs([nr, nc], [tr, tc], grid, used));
-		used[i] = false;
-	}
-	max_d + 1
-}
-
-const DR: [usize; 4] = [0, 1, 0, !0];
-const DC: [usize; 4] = [1, 0, !0, 0];
-
-fn gen_diriter(r: usize, c: usize, tr: usize, tc: usize) -> impl Iterator<Item = (usize, usize)> {
-	std::iter::zip(DR.iter(), DC.iter())
-		.map(move |(&dr, &dc)| (r.wrapping_add(dr), c.wrapping_add(dc)))
-		.filter(move |&(nr, nc)| nr < tr && nc < tc)
-}
+fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
 
 #[allow(unused)]
 mod fastio {
