@@ -1,5 +1,5 @@
 PROJECT = rust-ps
-SOURCE = ./src/main.rs
+SOURCE = ./rust-ps/src/main.rs
 TARGET = ./target/debug/$(PROJECT)
 RELEASE = ./target/release/$(PROJECT)
 INPUT = ./input.txt
@@ -18,10 +18,7 @@ run: $(RELEASE)
 	$(BACKTRACE) $^ < $(INPUT)
 
 boj:
-	cargo run --bin autocheck -- $(id)
-
-at:
-	cargo +1.42.0 run < $(INPUT)
+	cargo run -p boj-test -- $(id)
 
 perf: $(RELEASE)
 	sudo operf $^ < $(INPUT)
@@ -31,7 +28,7 @@ memchk: $(TARGET)
 	valgrind --leak-check=full --show-leak-kinds=all --log-file=$(MEMCHK) -v --error-limit=no $^ < $(INPUT)
 
 $(TARGET): $(SOURCE)
-	cargo build
+	cargo build -p rust-ps
 
 $(RELEASE): $(SOURCE)
-	cargo build --release
+	cargo build --release -p rust-ps

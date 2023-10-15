@@ -3,7 +3,37 @@
 #[allow(unused)]
 use std::{cmp::*, collections::*, iter, mem::*, num::*, ops::*};
 
-fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {}
+fn solve<'t, It: Iterator<Item = &'t str>>(sc: &mut fastio::Tokenizer<It>) {
+	let [tr, tc]: [usize; 2] = sc.next();
+	let grid: Vec<&[u8]> = sc.next_collect(tr);
+	let mut used = vec![false; 26];
+	used[(grid[0][0] - b'A') as usize] = true;
+	let ans = dfs([0, 0], [tr, tc], &grid, &mut used);
+	println!("{ans}");
+}
+
+fn dfs([r, c]: [usize; 2], [tr, tc]: [usize; 2], grid: &[&[u8]], used: &mut [bool]) -> usize {
+	let mut max_d = 0;
+	for (nr, nc) in gen_diriter(r, c, tr, tc) {
+		let i = (grid[nr][nc] - b'A') as usize;
+		if used[i] {
+			continue;
+		}
+		used[i] = true;
+		max_d = max_d.max(dfs([nr, nc], [tr, tc], grid, used));
+		used[i] = false;
+	}
+	max_d + 1
+}
+
+const DR: [usize; 4] = [0, 1, 0, !0];
+const DC: [usize; 4] = [1, 0, !0, 0];
+
+fn gen_diriter(r: usize, c: usize, tr: usize, tc: usize) -> impl Iterator<Item = (usize, usize)> {
+	std::iter::zip(DR.iter(), DC.iter())
+		.map(move |(&dr, &dc)| (r.wrapping_add(dr), c.wrapping_add(dc)))
+		.filter(move |&(nr, nc)| nr < tr && nc < tc)
+}
 
 #[allow(unused)]
 mod fastio {
@@ -14,22 +44,32 @@ mod fastio {
 	}
 
 	impl<'i, 's: 'i, It> Tokenizer<It> {
-		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self { Self { it: split(text) } }
+		pub fn new(text: &'s str, split: impl FnOnce(&'i str) -> It) -> Self {
+			Self { it: split(text) }
+		}
 	}
 
 	impl<'t, It: Iterator<Item = &'t str>> Tokenizer<It> {
-		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> { T::parse_from_iter(&mut self.it) }
+		pub fn next_ok<T: IterParse<'t>>(&mut self) -> PRes<'t, T> {
+			T::parse_from_iter(&mut self.it)
+		}
 
-		pub fn next<T: IterParse<'t>>(&mut self) -> T { self.next_ok().unwrap() }
+		pub fn next<T: IterParse<'t>>(&mut self) -> T {
+			self.next_ok().unwrap()
+		}
 
 		pub fn next_map<T: IterParse<'t>, U, const N: usize>(&mut self, f: impl FnMut(T) -> U) -> [U; N] {
 			let x: [T; N] = self.next();
 			x.map(f)
 		}
 
-		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
+		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ {
+			std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x)
+		}
 
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
+		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V {
+			self.next_it().take(size).collect()
+		}
 	}
 }
 
@@ -58,11 +98,15 @@ mod ioutil {
 	}
 
 	impl<'t> Atom<'t> for &'t str {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text) }
+		fn parse(text: &'t str) -> PRes<'t, Self> {
+			Ok(text)
+		}
 	}
 
 	impl<'t> Atom<'t> for &'t [u8] {
-		fn parse(text: &'t str) -> PRes<'t, Self> { Ok(text.as_bytes()) }
+		fn parse(text: &'t str) -> PRes<'t, Self> {
+			Ok(text.as_bytes())
+		}
 	}
 
 	macro_rules! impl_atom {
@@ -72,19 +116,24 @@ mod ioutil {
 
 	pub trait IterParse<'t>: Sized {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where 't: 's;
+		where
+			't: 's;
 	}
 
 	impl<'t, A: Atom<'t>> IterParse<'t> for A {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where 't: 's {
+		where
+			't: 's,
+		{
 			it.next().map_or(Err(InputExhaust), <Self as Atom>::parse)
 		}
 	}
 
 	impl<'t, A: IterParse<'t>, const N: usize> IterParse<'t> for [A; N] {
 		fn parse_from_iter<'s, It: Iterator<Item = &'t str>>(it: &'s mut It) -> PRes<'t, Self>
-		where 't: 's {
+		where
+			't: 's,
+		{
 			use std::mem::*;
 			let mut x: [MaybeUninit<A>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 			for p in x.iter_mut() {

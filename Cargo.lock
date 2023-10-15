@@ -51,6 +51,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "630be753d4e58660abd17930c71b647fe46c27ea6b63cc59e1e3851406972e42"
 
 [[package]]
+name = "boj-test"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "rand",
+ "scraper",
+ "ureq",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -494,12 +504,6 @@ dependencies = [
 [[package]]
 name = "rust-ps"
 version = "0.1.0"
-dependencies = [
- "anyhow",
- "rand",
- "scraper",
- "ureq",
-]
 
 [[package]]
 name = "rustls"

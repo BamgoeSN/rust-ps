@@ -1,19 +1,9 @@
-[package]
-name = "rust-ps"
-version = "0.1.0"
-edition = "2021"
-default-run = "rust-ps"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[[bin]]
-name = "autocheck"
-
-[dependencies]
-anyhow = "1.0.71"
-rand = "0.8.5"
-scraper = "0.17.1"
-ureq = "2.7.1"
+[workspace]
+members = [
+  "rust-ps",
+  "boj-test",
+]
+resolver = "2"
 
 [profile.release]
 debug = true

@@ -8,9 +8,12 @@ use std::{
 };
 
 fn main() {
+	const SRC: &str = "./rust-ps/src/main.rs";
+	const OUT: &str = "./boj-test/tmp/a.out";
+
 	print!("Compiling the code... ");
 	stdout().flush().unwrap();
-	let exec = compile("./src/main.rs", "./a.out").expect("Failed to compile");
+	let exec = compile(SRC, OUT).expect("Failed to compile");
 	println!("Done.");
 	stdout().flush().unwrap();
 
@@ -47,7 +50,7 @@ fn main() {
 		stdout().flush().unwrap();
 	}
 
-	fs::remove_file("./a.out").expect("Failed to remove the generated executable");
+	fs::remove_file(OUT).expect("Failed to remove the generated executable");
 }
 
 fn check_if_correct(ret: &str, out: &str) -> bool {
@@ -124,7 +127,7 @@ mod core {
 		}
 
 		pub fn run_exec(exec_path: impl AsRef<OsStr>, input: &str) -> Result<String, String> {
-			let curr_path = absolute_path("./").map_err(|e| e.to_string())?;
+			let curr_path = absolute_path("./boj-test/tmp/").map_err(|e| e.to_string())?;
 
 			let input_loc = generate_file(&curr_path, input).map_err(|e| format!("Error while generating the file: {e}"))?;
 			let input_file = File::open(&input_loc).map_err(|e| format!("Error while opening the input file: {e}"))?;
@@ -154,7 +157,9 @@ mod core {
 			Ok(file_path)
 		}
 
-		fn random_name() -> String { thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect() }
+		fn random_name() -> String {
+			thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect()
+		}
 
 		fn absolute_path(path: impl AsRef<Path>) -> io::Result<PathBuf> {
 			let path = path.as_ref();
@@ -171,8 +176,8 @@ mod core {
 
 			#[test]
 			fn compile_test() -> io::Result<()> {
-				let code_path = "./src/main.rs";
-				let exec_path = "./a.out";
+				let code_path = "./boj-test/src/main.rs";
+				let exec_path = "./boj-test/tmp/a.out";
 
 				let _exec = compile(code_path, exec_path);
 				Ok(())
@@ -180,8 +185,8 @@ mod core {
 
 			#[test]
 			fn run_test() -> io::Result<()> {
-				let code_path = "./src/main.rs";
-				let exec_path = "./a.out";
+				let code_path = "./boj-test/src/main.rs";
+				let exec_path = "./boj-test/tmp/a.out";
 
 				let exec = compile(code_path, exec_path)?;
 				let output = "xxx";
