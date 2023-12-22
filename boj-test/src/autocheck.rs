@@ -129,7 +129,7 @@ mod core {
 		pub fn run_exec(exec_path: impl AsRef<OsStr>, input: &str) -> Result<String, String> {
 			let curr_path = absolute_path("./boj-test/tmp/").map_err(|e| e.to_string())?;
 
-			let input_loc = generate_file(&curr_path, input).map_err(|e| format!("Error while generating the file: {e}"))?;
+			let input_loc = generate_file(curr_path, input).map_err(|e| format!("Error while generating the file: {e}"))?;
 			let input_file = File::open(&input_loc).map_err(|e| format!("Error while opening the input file: {e}"))?;
 
 			let proc = Command::new(&exec_path)
@@ -157,9 +157,7 @@ mod core {
 			Ok(file_path)
 		}
 
-		fn random_name() -> String {
-			thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect()
-		}
+		fn random_name() -> String { thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect() }
 
 		fn absolute_path(path: impl AsRef<Path>) -> io::Result<PathBuf> {
 			let path = path.as_ref();
