@@ -103,16 +103,12 @@ mod ioutil {
 }
 
 #[link(name = "c")]
-extern "C" {
-	fn mmap(addr: usize, len: usize, p: i32, f: i32, fd: i32, o: i64) -> *mut u8;
-	fn fstat(fd: i32, stat: *mut usize) -> i32;
-}
+extern "C" {}
 
 fn get_input() -> &'static str {
-	let mut stat = [0; 20];
-	unsafe { fstat(0, stat.as_mut_ptr()) };
-	let buffer = unsafe { mmap(0, stat[6], 1, 2, 0, 0) };
-	unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(buffer, stat[6])) }
+	use std::io::*;
+	let input = read_to_string(stdin()).unwrap();
+	Box::leak(input.into_boxed_str())
 }
 
 #[no_mangle]
