@@ -1,3 +1,5 @@
 /target
 /oprofile_data
 /.vscode
+/src/main
+src/main.testcases

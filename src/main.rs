@@ -29,7 +29,7 @@ mod fastio {
 
 		pub fn next_it<T: IterParse<'t>>(&mut self) -> impl Iterator<Item = T> + '_ { std::iter::repeat_with(move || self.next_ok().ok()).map_while(|x| x) }
 
-		pub fn next_collect<T: IterParse<'t>, V: FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
+		pub fn next_collect<T: IterParse<'t>, V: std::iter::FromIterator<T>>(&mut self, size: usize) -> V { self.next_it().take(size).collect() }
 	}
 }
 
@@ -40,7 +40,7 @@ mod ioutil {
 		InputExhaust,
 		ParseError(&'t str),
 	}
-	use InputError::*;
+	use self::InputError::*;
 
 	pub type PRes<'t, T> = std::result::Result<T, InputError<'t>>;
 
