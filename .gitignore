@@ -2,4 +2,4 @@
 /oprofile_data
 /.vscode
 /src/main
-src/main.testcases
+/src/main_*
